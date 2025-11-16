@@ -27,7 +27,7 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 - Visual indicators (virtual text or signs) mark annotated lines
 - Toggle indicator visibility on/off
 - Supports global or per-project storage
-- Optional nui.nvim integration for better UI
+- nui.nvim integration for better UI
 
 ## Installation
 
@@ -36,7 +36,7 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 ```lua
 {
   'fadli0029/aside.nvim',
-  dependencies = { 'MunifTanjim/nui.nvim' },  -- optional
+  dependencies = { 'MunifTanjim/nui.nvim' },
   config = function()
     require('aside').setup()
   end,
@@ -48,7 +48,7 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 ```lua
 use {
   'fadli0029/aside.nvim',
-  requires = { 'MunifTanjim/nui.nvim' },  -- optional
+  requires = { 'MunifTanjim/nui.nvim' },
   config = function()
     require('aside').setup()
   end,
@@ -115,7 +115,7 @@ For per-project storage, set `storage_path = '.aside'` in config. This creates `
 ## Requirements
 
 - Neovim 0.9+
-- nui.nvim (optional, falls back to vim.ui if not available)
+- nui.nvim
 
 ## License
 
