@@ -2,6 +2,10 @@
 
 A simple Neovim plugin for creating code annotations. Useful if you are studying or deep diving a codebase but hate cluttering code files with lengthy and dense comments.
 
+## Demo
+
+![Demo](./demo.gif)
+
 ## TODO
 
 ### High Priority
