@@ -1,0 +1,18 @@
+# Project context (development notes)
+context.md
+
+# Test data
+*.test.json
+test/
+.aside/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
