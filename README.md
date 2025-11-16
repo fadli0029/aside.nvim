@@ -29,6 +29,11 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 - Supports global or per-project storage
 - nui.nvim integration for better UI
 
+## Requirements
+
+- Neovim 0.9+
+- nui.nvim
+
 ## Installation
 
 ### lazy.nvim
@@ -111,11 +116,6 @@ require('aside').setup({
 Default storage location is `~/.local/share/nvim/aside/annotations.json`. All annotations from all projects are stored here, indexed by absolute file path.
 
 For per-project storage, set `storage_path = '.aside'` in config. This creates `.aside/annotations.json` in your project root.
-
-## Requirements
-
-- Neovim 0.9+
-- nui.nvim
 
 ## License
 
