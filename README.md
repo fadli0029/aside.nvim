@@ -34,8 +34,9 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 
 - Neovim 0.9+
 - [nui.nvim](https://github.com/MunifTanjim/nui.nvim)
-- [sqlite.lua](https://github.com/kkharji/sqlite.lua) (optional, falls back to JSON)
+- [sqlite.lua](https://github.com/kkharji/sqlite.lua) (recommended)
   - Requires sqlite3 binary on your system
+  - Falls back to JSON if unavailable (not actively maintained)
 
 ## Installation
 
@@ -125,11 +126,11 @@ require('aside').setup({
 
 ## Storage
 
-Default storage location is `~/.local/share/nvim/aside/`. With `sqlite.lua` installed, annotations are stored in `annotations.db`. Without it, `annotations.json` is used.
+Default storage location is `~/.local/share/nvim/aside/`.
 
-SQLite uses indexed queries and transactions. JSON reads the entire file for each operation.
+**SQLite** (recommended): Install `sqlite.lua` to use `annotations.db` with indexed queries and transactions. Existing JSON data migrates automatically with backup at `annotations.json.backup`.
 
-Existing JSON data migrates to SQLite automatically. A backup is created at `annotations.json.backup`.
+**JSON** (fallback): Used when `sqlite.lua` is unavailable. Reads entire file for each operation. Not actively maintained.
 
 For per-project storage, set `storage_path = '.aside'` in config.
 
