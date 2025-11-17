@@ -19,13 +19,12 @@ function M.setup(user_config)
     migration.auto_migrate()
   end)
 
-  -- Setup highlights and signs
   highlights.setup()
-
-  -- Setup autocommands for highlights
   highlights.setup_autocommands()
 
-  -- Setup keymaps
+  local extmarks = require('aside.extmarks')
+  extmarks.setup_autocommands()
+
   M.setup_keymaps()
 
   -- Setup commands

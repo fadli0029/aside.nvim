@@ -26,8 +26,13 @@ M.defaults = {
   indicators = {
     enabled = true,
     style = 'virtual_text',  -- or 'signs'
-    icon = '󰍨 ',  -- nerd font icon
-    text = ' [note]',  -- fallback if no nerd font
+    icon = '󰍨 ',
+    text = ' [note]',
+  },
+
+  -- Line tracking
+  tracking = {
+    search_range = 10,
   },
 }
 

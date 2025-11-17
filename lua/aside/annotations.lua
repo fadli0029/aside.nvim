@@ -36,9 +36,8 @@ function M.add_annotation()
     return
   end
 
-  -- Get the line content for hash
   local line_content = vim.api.nvim_buf_get_lines(bufnr, line_number - 1, line_number, false)[1]
-  local line_hash = storage.hash_line(line_content)
+  local line_hash = storage.hash_line(vim.trim(line_content))
 
   -- Show UI to create annotation
   local ui = require('aside.ui')
@@ -158,23 +157,38 @@ end
 
 -- Get selected text in visual mode
 function M.get_selected_text()
-  -- Save current register
-  local reg_save = vim.fn.getreg('"')
-  local reg_type_save = vim.fn.getregtype('"')
+  local mode = vim.fn.mode()
 
-  -- Try to get visual selection
-  vim.cmd('noautocmd normal! "vy')
-  local selected = vim.fn.getreg('"')
-
-  -- Restore register
-  vim.fn.setreg('"', reg_save, reg_type_save)
-
-  -- If nothing was selected, return nil
-  if selected == '' then
+  if mode ~= 'v' and mode ~= 'V' and mode ~= '\22' then
     return nil
   end
 
-  return selected
+  local start_pos = vim.fn.getpos("'<")
+  local end_pos = vim.fn.getpos("'>")
+
+  local start_line = start_pos[2]
+  local start_col = start_pos[3]
+  local end_line = end_pos[2]
+  local end_col = end_pos[3]
+
+  if start_line == 0 or end_line == 0 then
+    return nil
+  end
+
+  local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
+
+  if #lines == 0 then
+    return nil
+  end
+
+  if #lines == 1 then
+    lines[1] = string.sub(lines[1], start_col, end_col)
+  else
+    lines[1] = string.sub(lines[1], start_col)
+    lines[#lines] = string.sub(lines[#lines], 1, end_col)
+  end
+
+  return table.concat(lines, '\n')
 end
 
 -- Toggle indicators visibility
