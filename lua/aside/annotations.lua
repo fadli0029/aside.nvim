@@ -24,6 +24,9 @@ function M.add_annotation()
     -- No selection, use current line
     local line_content = vim.api.nvim_buf_get_lines(bufnr, line_number - 1, line_number, false)[1]
     anchor_text = vim.trim(line_content)
+  else
+    -- Trim selected text to remove leading/trailing whitespace
+    anchor_text = vim.trim(anchor_text)
   end
 
   -- Check if annotation already exists at this line

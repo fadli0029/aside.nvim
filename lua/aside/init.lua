@@ -7,8 +7,17 @@ local highlights = require('aside.highlights')
 
 -- Setup function called by user
 function M.setup(user_config)
+  -- Seed random number generator
+  math.randomseed(os.time() + vim.loop.hrtime())
+
   -- Merge user config with defaults
   config.setup(user_config or {})
+
+  -- Run auto-migration from JSON to SQLite
+  local migration = require('aside.migration')
+  vim.schedule(function()
+    migration.auto_migrate()
+  end)
 
   -- Setup highlights and signs
   highlights.setup()
@@ -66,6 +75,7 @@ function M.setup_commands()
   -- Create main command
   vim.api.nvim_create_user_command('Aside', function(opts)
     local subcommand = opts.fargs[1]
+    local arg = opts.fargs[2]
 
     if subcommand == 'add' then
       annotations.add_annotation()
@@ -75,16 +85,51 @@ function M.setup_commands()
       annotations.list_annotations()
     elseif subcommand == 'toggle' then
       annotations.toggle_indicators()
+    elseif subcommand == 'export' then
+      M.export_to_json(arg)
+    elseif subcommand == 'info' then
+      M.show_storage_info()
     else
       vim.notify('Unknown subcommand: ' .. (subcommand or 'nil'), vim.log.levels.ERROR)
-      vim.notify('Available: add, view, list, toggle', vim.log.levels.INFO)
+      vim.notify('Available: add, view, list, toggle, export, info', vim.log.levels.INFO)
     end
   end, {
-    nargs = 1,
+    nargs = '+',
     complete = function()
-      return { 'add', 'view', 'list', 'toggle' }
+      return { 'add', 'view', 'list', 'toggle', 'export', 'info' }
     end,
   })
+end
+
+-- Export annotations to JSON
+function M.export_to_json(output_path)
+  local storage = require('aside.storage')
+
+  if not output_path then
+    output_path = vim.fn.expand(require('aside.config').get().storage_path) .. '/annotations_export.json'
+  end
+
+  local ok, err = storage.export_to_json(output_path)
+
+  if ok then
+    vim.notify('Annotations exported to: ' .. output_path, vim.log.levels.INFO)
+  else
+    vim.notify('Export failed: ' .. (err or 'unknown error'), vim.log.levels.ERROR)
+  end
+end
+
+-- Show storage backend info
+function M.show_storage_info()
+  local storage = require('aside.storage')
+  local info = storage.get_info()
+
+  local msg = string.format(
+    'Storage backend: %s\nUsing SQLite: %s',
+    info.backend_type,
+    tostring(info.using_sqlite)
+  )
+
+  vim.notify(msg, vim.log.levels.INFO)
 end
 
 return M

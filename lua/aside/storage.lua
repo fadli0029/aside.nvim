@@ -1,179 +1,124 @@
+-- Storage facade: Automatically uses SQLite when available, falls back to JSON
 local M = {}
 
--- Get the storage file path
-function M.get_storage_path()
-  local config = require('aside.config').get()
-  local storage_dir = config.storage_path
+-- Backend selection
+M.backend = nil
+M.backend_type = nil
 
-  -- Expand ~ and other special characters
-  storage_dir = vim.fn.expand(storage_dir)
-
-  -- Ensure the directory exists
-  if vim.fn.isdirectory(storage_dir) == 0 then
-    vim.fn.mkdir(storage_dir, 'p')
+-- Initialize storage backend
+function M.init_backend()
+  if M.backend then
+    return M.backend
   end
 
-  return storage_dir .. '/annotations.json'
+  -- Try to load SQLite backend first
+  local has_sqlite_storage, storage_sqlite = pcall(require, 'aside.storage_sqlite')
+
+  if has_sqlite_storage and storage_sqlite.is_available() then
+    M.backend = storage_sqlite
+    M.backend_type = 'sqlite'
+  else
+    -- Fallback to JSON storage
+    local storage_json = require('aside.storage_json')
+    M.backend = storage_json
+    M.backend_type = 'json'
+
+    -- Notify user if SQLite is not available (only once)
+    if not M.notified_fallback then
+      vim.notify(
+        'Aside.nvim: sqlite.lua not found, using JSON storage.',
+        vim.log.levels.WARN
+      )
+      M.notified_fallback = true
+    end
+  end
+
+  return M.backend
 end
 
--- Read all annotations from storage
+-- Get current backend type
+function M.get_backend_type()
+  M.init_backend()
+  return M.backend_type
+end
+
+-- Check if using SQLite backend
+function M.is_using_sqlite()
+  return M.get_backend_type() == 'sqlite'
+end
+
+-- Load all annotations
 function M.load()
-  local file_path = M.get_storage_path()
-
-  -- If file doesn't exist, return empty table
-  if vim.fn.filereadable(file_path) == 0 then
-    return {}
-  end
-
-  -- Read file contents
-  local file = io.open(file_path, 'r')
-  if not file then
-    vim.notify('Failed to open annotations file: ' .. file_path, vim.log.levels.ERROR)
-    return {}
-  end
-
-  local content = file:read('*all')
-  file:close()
-
-  -- Parse JSON
-  local ok, annotations = pcall(vim.json.decode, content)
-  if not ok then
-    vim.notify('Failed to parse annotations file (invalid JSON)', vim.log.levels.ERROR)
-    return {}
-  end
-
-  return annotations or {}
-end
-
--- Save all annotations to storage
-function M.save(annotations)
-  local file_path = M.get_storage_path()
-
-  -- Convert to JSON
-  local ok, json = pcall(vim.json.encode, annotations)
-  if not ok then
-    vim.notify('Failed to encode annotations to JSON', vim.log.levels.ERROR)
-    return false
-  end
-
-  -- Write to file
-  local file = io.open(file_path, 'w')
-  if not file then
-    vim.notify('Failed to write annotations file: ' .. file_path, vim.log.levels.ERROR)
-    return false
-  end
-
-  file:write(json)
-  file:close()
-
-  return true
+  local backend = M.init_backend()
+  return backend.load()
 end
 
 -- Get annotations for a specific file
 function M.get_for_file(file_path)
-  local all_annotations = M.load()
-  local file_annotations = {}
-
-  -- Normalize file path to absolute
-  local abs_path = vim.fn.fnamemodify(file_path, ':p')
-
-  for _, annotation in ipairs(all_annotations) do
-    if annotation.file == abs_path then
-      table.insert(file_annotations, annotation)
-    end
-  end
-
-  return file_annotations
+  local backend = M.init_backend()
+  return backend.get_for_file(file_path)
 end
 
 -- Add a new annotation
 function M.add(annotation)
-  local annotations = M.load()
-
-  -- Generate unique ID (simple UUID-like string)
-  annotation.id = M.generate_id()
-  annotation.created_at = os.date('%Y-%m-%dT%H:%M:%S')
-  annotation.updated_at = annotation.created_at
-
-  table.insert(annotations, annotation)
-  return M.save(annotations)
+  local backend = M.init_backend()
+  return backend.add(annotation)
 end
 
 -- Update an existing annotation
 function M.update(annotation_id, updates)
-  local annotations = M.load()
-
-  for i, annotation in ipairs(annotations) do
-    if annotation.id == annotation_id then
-      -- Merge updates
-      for key, value in pairs(updates) do
-        annotation[key] = value
-      end
-      annotation.updated_at = os.date('%Y-%m-%dT%H:%M:%S')
-      annotations[i] = annotation
-      return M.save(annotations)
-    end
-  end
-
-  return false
+  local backend = M.init_backend()
+  return backend.update(annotation_id, updates)
 end
 
 -- Delete an annotation
 function M.delete(annotation_id)
-  local annotations = M.load()
-
-  for i, annotation in ipairs(annotations) do
-    if annotation.id == annotation_id then
-      table.remove(annotations, i)
-      return M.save(annotations)
-    end
-  end
-
-  return false
+  local backend = M.init_backend()
+  return backend.delete(annotation_id)
 end
 
 -- Get annotation by ID
 function M.get_by_id(annotation_id)
-  local annotations = M.load()
-
-  for _, annotation in ipairs(annotations) do
-    if annotation.id == annotation_id then
-      return annotation
-    end
-  end
-
-  return nil
+  local backend = M.init_backend()
+  return backend.get_by_id(annotation_id)
 end
 
 -- Get annotation at a specific location (file + line)
 function M.get_at_location(file_path, line_number)
-  local file_annotations = M.get_for_file(file_path)
-
-  for _, annotation in ipairs(file_annotations) do
-    if annotation.line == line_number then
-      return annotation
-    end
-  end
-
-  return nil
+  local backend = M.init_backend()
+  return backend.get_at_location(file_path, line_number)
 end
 
 -- Generate a unique ID
 function M.generate_id()
-  -- Simple ID generation using timestamp + random number
-  local timestamp = os.time()
-  local random = math.random(1000, 9999)
-  return string.format('%s-%s', timestamp, random)
+  local backend = M.init_backend()
+  return backend.generate_id()
 end
 
 -- Calculate hash of a line (for detecting if code changed)
 function M.hash_line(line_content)
-  -- Basic hash implementation, good enough for detecting line changes
-  local hash = 0
-  for i = 1, #line_content do
-    hash = (hash * 31 + string.byte(line_content, i)) % 2^32
+  local backend = M.init_backend()
+  return backend.hash_line(line_content)
+end
+
+-- Export to JSON (for backup/portability when using SQLite)
+function M.export_to_json(output_path)
+  if M.is_using_sqlite() then
+    local migration = require('aside.migration')
+    return migration.export_sqlite_to_json(output_path)
+  else
+    vim.notify('Already using JSON storage, no export needed', vim.log.levels.INFO)
+    return true
   end
-  return tostring(hash)
+end
+
+-- Get storage info for debugging
+function M.get_info()
+  M.init_backend()
+  return {
+    backend_type = M.backend_type,
+    using_sqlite = M.backend_type == 'sqlite',
+  }
 end
 
 return M
