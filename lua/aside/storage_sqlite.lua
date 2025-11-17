@@ -1,7 +1,6 @@
 local M = {}
 
--- Current schema version
-M.SCHEMA_VERSION = 1
+M.SCHEMA_VERSION = 2
 
 -- Check if sqlite.lua is available
 local has_sqlite, db_module = pcall(require, 'sqlite.db')
@@ -80,6 +79,7 @@ function M.create_schema()
     text = 'text',
     content = { type = 'text', required = true },
     hash = 'text',
+    status = { type = 'text', default = 'active' },
     created_at = { type = 'text', required = true },
     updated_at = { type = 'text', required = true },
     ensure = true,
@@ -101,15 +101,46 @@ function M.create_schema()
     vim.notify('Aside.nvim: Failed to create database indexes', vim.log.levels.WARN)
   end
 
-  -- Check/set schema version
-  local version_result = M.db:select('schema_version', { where = { version = M.SCHEMA_VERSION } })
+  local current_version = M.get_current_version()
 
-  if not version_result or #version_result == 0 then
-    -- Insert schema version
+  if current_version < M.SCHEMA_VERSION then
+    M.migrate_schema(current_version, M.SCHEMA_VERSION)
+  end
+
+  if current_version == 0 then
     M.db:insert('schema_version', { version = M.SCHEMA_VERSION })
+  else
+    M.db:update('schema_version', {
+      where = { version = current_version },
+      set = { version = M.SCHEMA_VERSION }
+    })
   end
 
   return true
+end
+
+function M.get_current_version()
+  local version_result = M.db:select('schema_version')
+
+  if not version_result or #version_result == 0 then
+    return 0
+  end
+
+  return version_result[1].version
+end
+
+function M.migrate_schema(from_version, to_version)
+  if from_version < 2 and to_version >= 2 then
+    local ok = pcall(function()
+      M.db:eval([[
+        ALTER TABLE annotations ADD COLUMN status TEXT DEFAULT 'active';
+      ]])
+    end)
+
+    if not ok then
+      vim.notify('Aside.nvim: Schema migration to v2 failed', vim.log.levels.WARN)
+    end
+  end
 end
 
 -- Load all annotations
@@ -207,8 +238,8 @@ function M.add(annotation)
     return false
   end
 
-  -- Generate unique ID
   annotation.id = M.generate_id()
+  annotation.status = 'active'
   annotation.created_at = os.date('%d %B %Y, %H:%M:%S')
   annotation.updated_at = annotation.created_at
 

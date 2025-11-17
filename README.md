@@ -10,11 +10,12 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 
 ### High Priority
 - [x] Improve storage layer - implement proper indexing, add data validation, consider SQLite migration
-- [ ] Better line tracking - implement fuzzy matching when code changes and lines shift
-- [ ] Performance optimization - reduce latency when loading/displaying annotations
+- [x] Better line tracking - implement fuzzy matching when code changes and lines shift
 
 ### Future Features
 - [ ] Search across all annotations
+- [ ] Bulk delete annotations in a file
+- [ ] Performance optimization - reduce latency when loading/displaying annotations
 - [ ] Export annotations to markdown
 - [ ] Annotation categories/tags
 - [ ] Git integration for smarter line tracking

@@ -36,9 +36,8 @@ function M.add_annotation()
     return
   end
 
-  -- Get the line content for hash
   local line_content = vim.api.nvim_buf_get_lines(bufnr, line_number - 1, line_number, false)[1]
-  local line_hash = storage.hash_line(line_content)
+  local line_hash = storage.hash_line(vim.trim(line_content))
 
   -- Show UI to create annotation
   local ui = require('aside.ui')

@@ -1,4 +1,6 @@
 local storage = require('aside.storage')
+local reconcile = require('aside.reconcile')
+local extmarks = require('aside.extmarks')
 
 local M = {}
 
@@ -47,8 +49,13 @@ function M.update_buffer(bufnr)
     return
   end
 
-  -- Get annotations for this file
   local annotations = storage.get_for_file(file_path)
+
+  if #annotations > 0 then
+    reconcile.reconcile_annotations(bufnr, file_path, annotations)
+    annotations = storage.get_for_file(file_path)
+    extmarks.track_annotations(bufnr, annotations)
+  end
 
   if config.indicators.style == 'virtual_text' then
     M._apply_virtual_text(bufnr, annotations, config)
@@ -57,28 +64,33 @@ function M.update_buffer(bufnr)
   end
 end
 
--- Apply virtual text indicators
 function M._apply_virtual_text(bufnr, annotations, config)
-  for _, annotation in ipairs(annotations) do
-    local line = annotation.line - 1  -- 0-indexed for API
-    local text = config.indicators.icon .. config.indicators.text
+  local line_count = vim.api.nvim_buf_line_count(bufnr)
 
-    -- Add virtual text at the end of the line
-    vim.api.nvim_buf_set_extmark(bufnr, M.namespace, line, 0, {
-      virt_text = { { text, 'AsideAnnotation' } },
-      virt_text_pos = 'eol',
-      hl_mode = 'combine',
-    })
+  for _, annotation in ipairs(annotations) do
+    if annotation.status ~= 'orphaned' and annotation.line <= line_count then
+      local line = annotation.line - 1
+      local text = config.indicators.icon .. config.indicators.text
+
+      vim.api.nvim_buf_set_extmark(bufnr, M.namespace, line, 0, {
+        virt_text = { { text, 'AsideAnnotation' } },
+        virt_text_pos = 'eol',
+        hl_mode = 'combine',
+      })
+    end
   end
 end
 
--- Apply sign indicators
 function M._apply_signs(bufnr, annotations, config)
+  local line_count = vim.api.nvim_buf_line_count(bufnr)
+
   for _, annotation in ipairs(annotations) do
-    vim.fn.sign_place(0, '', M.sign_name, bufnr, {
-      lnum = annotation.line,
-      priority = 10,
-    })
+    if annotation.status ~= 'orphaned' and annotation.line <= line_count then
+      vim.fn.sign_place(0, '', M.sign_name, bufnr, {
+        lnum = annotation.line,
+        priority = 10,
+      })
+    end
   end
 end
 

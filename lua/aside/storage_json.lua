@@ -89,6 +89,7 @@ function M.add(annotation)
   local annotations = M.load()
 
   annotation.id = M.generate_id()
+  annotation.status = 'active'
   annotation.created_at = os.date('%d %B %Y, %H:%M:%S')
   annotation.updated_at = annotation.created_at
 
