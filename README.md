@@ -101,6 +101,11 @@ require('aside').setup({
     icon = '󰍨 ',
     text = ' [note]',
   },
+
+  -- Line tracking
+  tracking = {
+    search_range = 10,  -- lines to search when reconciling moved annotations
+  },
 })
 ```
 

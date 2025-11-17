@@ -1,10 +1,10 @@
 local storage = require('aside.storage')
+local config = require('aside.config')
 
 local M = {}
 
-M.SEARCH_RANGE = 10
-
 function M.reconcile_annotations(bufnr, file_path, annotations)
+  local search_range = config.get().tracking.search_range
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   local updated = {}
 
@@ -22,7 +22,7 @@ function M.reconcile_annotations(bufnr, file_path, annotations)
       end
     end
 
-    local new_line = M.find_line_by_hash(lines, annotation.hash, annotation.line)
+    local new_line = M.find_line_by_hash(lines, annotation.hash, annotation.line, search_range)
 
     if new_line then
       storage.update(annotation.id, { line = new_line })
@@ -37,9 +37,9 @@ function M.reconcile_annotations(bufnr, file_path, annotations)
   return updated
 end
 
-function M.find_line_by_hash(lines, target_hash, hint_line)
-  local start_line = math.max(1, hint_line - M.SEARCH_RANGE)
-  local end_line = math.min(#lines, hint_line + M.SEARCH_RANGE)
+function M.find_line_by_hash(lines, target_hash, hint_line, search_range)
+  local start_line = math.max(1, hint_line - search_range)
+  local end_line = math.min(#lines, hint_line + search_range)
 
   for i = start_line, end_line do
     local line_hash = storage.hash_line(vim.trim(lines[i]))
