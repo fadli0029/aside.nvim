@@ -34,6 +34,11 @@ M.defaults = {
   tracking = {
     search_range = 10,
   },
+
+  -- LSP integration
+  lsp = {
+    hover = false,  -- Show annotations in LSP hover
+  },
 }
 
 -- Current configuration

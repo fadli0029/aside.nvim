@@ -25,6 +25,13 @@ function M.setup(user_config)
   local extmarks = require('aside.extmarks')
   extmarks.setup_autocommands()
 
+  -- Setup LSP integration if enabled
+  local opts = config.get()
+  if opts.lsp.hover then
+    local lsp = require('aside.lsp')
+    lsp.setup()
+  end
+
   M.setup_keymaps()
 
   -- Setup commands
