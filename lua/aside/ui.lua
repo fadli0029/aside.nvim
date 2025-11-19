@@ -3,6 +3,59 @@ local M = {}
 -- Check if nui.nvim is available
 local has_nui, Popup = pcall(require, 'nui.popup')
 local has_nui_input, Input = pcall(require, 'nui.input')
+local has_nui_menu, Menu = pcall(require, 'nui.menu')
+
+-- Show confirmation dialog
+function M.show_confirm(prompt, callback)
+  local config = require('aside.config').get()
+
+  if has_nui_menu then
+    local menu = Menu({
+      position = '50%',
+      size = {
+        width = 40,
+        height = 4,
+      },
+      border = {
+        style = config.ui.border,
+        text = {
+          top = ' ' .. prompt .. ' ',
+          top_align = 'center',
+        },
+      },
+      win_options = {
+        winhighlight = 'Normal:Normal,FloatBorder:Normal',
+      },
+    }, {
+      lines = {
+        Menu.item('Yes', { key = 'y' }),
+        Menu.item('No', { key = 'n' }),
+      },
+      max_width = 20,
+      keymap = {
+        focus_next = { 'j', '<Down>', '<Tab>' },
+        focus_prev = { 'k', '<Up>', '<S-Tab>' },
+        close = { '<Esc>', 'q' },
+        submit = { '<CR>', '<Space>' },
+      },
+      on_submit = function(item)
+        callback(item.text == 'Yes')
+      end,
+      on_close = function()
+        callback(false)
+      end,
+    })
+
+    menu:mount()
+  else
+    -- Fallback to vim.ui.select
+    vim.ui.select({ 'Yes', 'No' }, {
+      prompt = prompt,
+    }, function(choice)
+      callback(choice == 'Yes')
+    end)
+  end
+end
 
 -- Show create annotation popup
 function M.show_create_popup(callback, anchor_text)
@@ -200,10 +253,8 @@ function M._show_view_nui(annotation, callback, config)
 
   popup:map('n', '<C-d>', function()
     popup:unmount()
-    vim.ui.select({ 'Yes', 'No' }, {
-      prompt = 'Delete this annotation?',
-    }, function(choice)
-      if choice == 'Yes' then
+    M.show_confirm('Delete this annotation?', function(confirmed)
+      if confirmed then
         callback('delete')
       end
     end)
