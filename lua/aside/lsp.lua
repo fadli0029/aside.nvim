@@ -13,10 +13,6 @@ function M.setup()
   M.original_hover_handler = vim.lsp.handlers["textDocument/hover"]
 
   vim.lsp.handlers["textDocument/hover"] = function(err, result, ctx, config)
-    if err or not result or not result.contents then
-      return M.original_hover_handler(err, result, ctx, config)
-    end
-
     local bufnr = vim.api.nvim_get_current_buf()
     local file_path = vim.api.nvim_buf_get_name(bufnr)
     local cursor = vim.api.nvim_win_get_cursor(0)
@@ -25,7 +21,15 @@ function M.setup()
     local annotation = storage.get_at_location(file_path, line_number)
 
     if annotation then
-      result = M.append_annotation(result, annotation)
+      if not result or not result.contents then
+        result = M.create_annotation_only_result(annotation)
+      else
+        result = M.append_annotation(result, annotation)
+      end
+    end
+
+    if err or not result or not result.contents then
+      return M.original_hover_handler(err, result, ctx, config)
     end
 
     return M.original_hover_handler(err, result, ctx, config)
@@ -38,6 +42,16 @@ function M.teardown()
     vim.lsp.handlers["textDocument/hover"] = M.original_hover_handler
     M.original_hover_handler = nil
   end
+end
+
+-- Create hover result with annotation only
+function M.create_annotation_only_result(annotation)
+  return {
+    contents = {
+      kind = "markdown",
+      value = string.format("**Note**\n\n%s", annotation.content)
+    }
+  }
 end
 
 -- Append annotation to hover result
