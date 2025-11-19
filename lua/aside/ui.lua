@@ -28,6 +28,8 @@ function M._show_create_nui(callback, anchor_text, config)
       text = {
         top = ' Add Annotation for: ' .. vim.fn.strcharpart(display_text, 0, 40) .. ' ',
         top_align = 'center',
+        bottom = ' <C-s> save | q cancel ',
+        bottom_align = 'center',
       },
     },
     position = '50%',
@@ -45,16 +47,9 @@ function M._show_create_nui(callback, anchor_text, config)
   -- Mount the popup
   popup:mount()
 
-  -- Add instructions at the top
-  vim.api.nvim_buf_set_lines(popup.bufnr, 0, 0, false, {
-    '# Write your annotation below (markdown supported)',
-    '# Press <C-s> to save, q to cancel',
-    '',
-  })
-
-  -- Set cursor to after instructions
+  -- Start in insert mode for easier typing
   vim.schedule(function()
-    pcall(vim.api.nvim_win_set_cursor, popup.winid, { 4, 0 })
+    vim.cmd('startinsert')
   end)
 
   -- Keymaps
@@ -63,14 +58,14 @@ function M._show_create_nui(callback, anchor_text, config)
   end, { noremap = true })
 
   popup:map('n', '<C-s>', function()
-    local lines = vim.api.nvim_buf_get_lines(popup.bufnr, 3, -1, false)
+    local lines = vim.api.nvim_buf_get_lines(popup.bufnr, 0, -1, false)
     local content = table.concat(lines, '\n')
     popup:unmount()
     callback(vim.trim(content))
   end, { noremap = true })
 
   popup:map('i', '<C-s>', function()
-    local lines = vim.api.nvim_buf_get_lines(popup.bufnr, 3, -1, false)
+    local lines = vim.api.nvim_buf_get_lines(popup.bufnr, 0, -1, false)
     local content = table.concat(lines, '\n')
     popup:unmount()
     callback(vim.trim(content))
