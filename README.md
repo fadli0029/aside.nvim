@@ -11,11 +11,11 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 ### Future Features
 - [x] Improve storage layer - implement proper indexing, add data validation, consider SQLite migration
 - [x] Better line tracking - implement fuzzy matching when code changes and lines shift
+- [x] LSP hover integration
 - [ ] Search across all annotations
 - [ ] Bulk delete annotations in a file
 - [ ] Export annotations to markdown
 - [ ] Annotation categories/tags
-- [ ] LSP hover integration
 - [ ] Git integration for smarter line tracking
 - [ ] Performance optimization - reduce latency when loading/displaying annotations
 
@@ -28,6 +28,7 @@ A simple Neovim plugin for creating code annotations. Useful if you are studying
 - Toggle indicator visibility
 - Global or per-project storage
 - Export to JSON for backups
+- LSP hover integration (opt-in)
 
 ## Requirements
 
@@ -104,6 +105,11 @@ require('aside').setup({
   tracking = {
     search_range = 10,  -- lines to search when reconciling moved annotations
   },
+
+  -- LSP integration
+  lsp = {
+    hover = false,  -- show annotations in LSP hover popup
+  },
 })
 ```
 
@@ -127,6 +133,12 @@ require('aside').setup({
 :Aside export path  " Export annotations to custom path
 :Aside info         " Show storage backend info (SQLite or JSON)
 ```
+
+## LSP Hover Integration
+
+When enabled with `lsp.hover = true`, annotations appear in LSP hover popups alongside language server documentation. The feature wraps the existing hover handler, preserving any custom LSP configurations.
+
+![LSP Demo](./lsp-demo.gif)
 
 ## Storage
 
