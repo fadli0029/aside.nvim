@@ -95,6 +95,10 @@ function M._show_create_nui(callback, anchor_text, config)
       readonly = false,
       filetype = 'markdown',
     },
+    win_options = {
+      wrap = true,
+      linebreak = true,
+    },
   })
 
   -- Mount the popup
@@ -171,6 +175,10 @@ function M._show_view_nui(annotation, callback, config)
       modifiable = true,
       readonly = false,
       filetype = 'markdown',
+    },
+    win_options = {
+      wrap = true,
+      linebreak = true,
     },
   })
 
@@ -316,6 +324,10 @@ function M._show_list_nui(annotations, callback, config)
       modifiable = false,
       readonly = true,
       filetype = 'markdown',
+    },
+    win_options = {
+      wrap = true,
+      linebreak = true,
     },
   })
 
